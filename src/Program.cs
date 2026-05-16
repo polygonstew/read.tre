@@ -10,10 +10,18 @@ namespace TreeWriter
         {
             string target = "";
             bool includeHidden = false;
+            bool showHelp = false;
             foreach (string a in args)
             {
                 if (a == "--hidden") includeHidden = true;
+                else if (a == "-h" || a == "--help") showHelp = true;
                 else target = a;
+            }
+
+            if (showHelp)
+            {
+                PrintHelp();
+                return;
             }
 
             //no target -> scan current dir
@@ -35,6 +43,29 @@ namespace TreeWriter
             {
                 Console.WriteLine("not found: " + target);
             }
+        }
+
+        static void PrintHelp()
+        {
+            Console.WriteLine(@"read.tre - bidirectional cli for .tre files
+
+usage:
+  tre                    scan current dir -> <name>.tre
+  tre <folder>           scan that folder -> <name>.tre
+  tre <file.tre>         build folders from a .tre
+  tre [path] --hidden    include hidden folders when scanning
+
+flags:
+  -h, --help             show this help
+  --hidden               include folders starting with .
+
+format:
+  demo/
+    readme.md
+    src/
+      main.py
+
+also reads windows 'tree /F /A' output");
         }
 
         //forward: dir -> .tre

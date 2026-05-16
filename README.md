@@ -21,6 +21,7 @@ tre                    # current dir -> <foldername>.tre
 tre <folder>           # that folder -> <foldername>.tre
 tre <file.tre>         # build folder structure from a .tre
 tre --hidden <folder>  # include hidden folders (.git, .vscode, etc)
+tre -h                 # help
 ```
 
 The reverse mode also reads Windows `tree /F /A` output, so this works:

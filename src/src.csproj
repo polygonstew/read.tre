@@ -1,6 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
     <AssemblyName>tre</AssemblyName>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
