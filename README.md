@@ -11,8 +11,10 @@
 </div>
 
 ---
+## download
 
-Bidirectional CLI for the `.tre` format. Companion to my [create.tre](https://github.com/polygonstew/create.tre) VS Code extension.
+Grab the latest `tre.exe` from [releases](https://github.com/polygonstew/read.tre/releases/latest), drop it in a folder on PATH.
+Bidirectional CLI for the `.tre` format. Companion to my [create.tre](https://github.com/polygonstew/create.tre) VS Code extension.(in dev)
 
 ## usage
 
