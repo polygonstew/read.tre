@@ -206,6 +206,11 @@ also reads windows 'tree /F /A' output");
 
                 if (isFolder)
                 {
+                    Console.WriteLine("!!! This will overwrite any files already present !!!");
+                    Console.WriteLine($"!!! are you positive?            (CTRL+C to backout)");
+                    Console.ReadKey();
+                    Console.WriteLine($"!!! press any key to continue... (CTRL+C to backout)");
+                    Console.ReadKey();
                     Directory.CreateDirectory(path);
                 }
                 else

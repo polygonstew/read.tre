@@ -1,0 +1,7 @@
+publish/
+  publish.tre
+  tre.deps.json
+  tre.dll
+  tre.exe
+  tre.pdb
+  tre.runtimeconfig.json
