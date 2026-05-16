@@ -1,0 +1,37 @@
+[
+  {
+    "Name": "Basic Blender Python Addon",
+    "Description": "Starter treeplate for a simple addon with custom operators and UI panels",
+    "Language": "Python",
+    "Author": "Polygon Stew",
+    "Files": [
+      { "Path": "__init__.py", "Description": "Main addon file with bl_info dictionary" },
+      { "Path": "operators.py", "Description": "Custom operators for the addon" },
+      { "Path": "panels.py", "Description": "Sidebar UI panels" },
+      { "Path": "README.md", "Description": "Addon documentation" }
+    ]
+  },
+  {
+    "Name": "Face Tracking Importer",
+    "Description": "Imports MediaPipe facial landmark data into a Blender scene",
+    "Language": "Python",
+    "Author": "Polygon Stew",
+    "Files": [
+      { "Path": "__init__.py", "Description": "Addon registration and bl_info" },
+      { "Path": "import_landmarks.py", "Description": "Reads JSON landmark data from disk" },
+      { "Path": "rig_builder.py", "Description": "Builds an armature from the landmarks" },
+      { "Path": "panel.py", "Description": "UI panel in the 3D viewport sidebar" }
+    ]
+  },
+  {
+    "Name": "Asset Bulk Importer",
+    "Description": "Imports a folder of 3D assets into the current scene",
+    "Language": "Python",
+    "Author": "Polygon Stew",
+    "Files": [
+      { "Path": "__init__.py", "Description": "Addon registration" },
+      { "Path": "asset_panel.py", "Description": "Sidebar UI for the importer" },
+      { "Path": "importers.py", "Description": "Handlers for OBJ, FBX, and GLTF files" }
+    ]
+  }
+]
