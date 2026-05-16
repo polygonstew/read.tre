@@ -16,6 +16,12 @@
 Grab the latest `tre.exe` from [releases](https://github.com/polygonstew/read.tre/releases/latest), drop it in a folder on PATH.
 Bidirectional CLI for the `.tre` format. Companion to my [create.tre](https://github.com/polygonstew/create.tre) VS Code extension.(in dev)
 
+OR
+
+## install via scoop
+
+scoop install https://raw.githubusercontent.com/polygonstew/read.tre/main/read.tre.json
+
 ## usage
 
 ```
