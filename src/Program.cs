@@ -53,6 +53,7 @@ usage:
   tre                    scan current dir -> <name>.tre
   tre <folder>           scan that folder -> <name>.tre
   tre <file.tre>         build folders from a .tre
+  tre <file.txt>         build folders from a .txt (tree /F output)
   tre [path] --hidden    include hidden folders when scanning
 
 flags:
