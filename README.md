@@ -18,9 +18,12 @@ Bidirectional CLI for the `.tre` format. Companion to my [create.tre](https://gi
 
 OR
 
-## install via scoop
+## install via 
 
+# scoop
 scoop install https://raw.githubusercontent.com/polygonstew/read.tre/main/read.tre.json
+# winget
+winget install polygonstew.read.tre
 
 ## usage
 
