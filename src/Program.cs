@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Collections.Generic;
 
 namespace TreeWriter
 {
@@ -7,44 +8,181 @@ namespace TreeWriter
     {
         static void Main(string[] args)
         {
-            Console.Write("path to scan (blank = current): ");
-            string? input = Console.ReadLine(); // that ? gets me every time
-            string rootPath = string.IsNullOrWhiteSpace(input) ? Directory.GetCurrentDirectory() : input;
-
-            if (!Directory.Exists(rootPath))
+            string target = "";
+            bool includeHidden = false;
+            foreach (string a in args)
             {
-                Console.WriteLine("not a directory");
+                if (a == "--hidden") includeHidden = true;
+                else target = a;
+            }
+
+            //no target -> scan current dir
+            if (string.IsNullOrEmpty(target))
+            {
+                ScanDirectory(Directory.GetCurrentDirectory(), includeHidden);
                 return;
             }
 
+            if (File.Exists(target))
+            {
+                BuildFromTree(target);
+            }
+            else if (Directory.Exists(target))
+            {
+                ScanDirectory(target, includeHidden);
+            }
+            else
+            {
+                Console.WriteLine("not found: " + target);
+            }
+        }
+
+        //forward: dir -> .tre
+        static void ScanDirectory(string rootPath, bool includeHidden)
+        {
             DirectoryInfo root = new DirectoryInfo(rootPath);
             string outFile = root.Name + ".tre";
 
-            //write tree
             using (StreamWriter writer = new StreamWriter(outFile))
             {
-                WriteTree(root, 0, writer);
+                WriteTree(root, 0, writer, includeHidden);
             }
 
             Console.WriteLine("wrote " + outFile);
-            Console.ReadKey();
         }
 
         //recursive
-        static void WriteTree(DirectoryInfo dir, int depth, StreamWriter writer)
+        static void WriteTree(DirectoryInfo dir, int depth, StreamWriter writer, bool includeHidden)
         {
             string indent = new string(' ', depth * 2);
             writer.WriteLine(indent + dir.Name + "/");
 
-            foreach (DirectoryInfo sub in dir.GetDirectories())
+            try
             {
-                if (sub.Name.StartsWith(".")) continue;
-                WriteTree(sub, depth + 1, writer);
+                foreach (DirectoryInfo sub in dir.GetDirectories())
+                {
+                    if (!includeHidden && sub.Name.StartsWith(".")) continue;
+                    WriteTree(sub, depth + 1, writer, includeHidden);
+                }
+
+                foreach (FileInfo file in dir.GetFiles())
+                {
+                    writer.WriteLine(indent + "  " + file.Name);
+                }
+            }
+            catch (UnauthorizedAccessException) { }
+        }
+
+        //reverse: .tre -> dir
+        static void BuildFromTree(string treFile)
+        {
+            string[] lines = File.ReadAllLines(treFile);
+
+            //detect tree /F format
+            bool treeFormat = false;
+            foreach (string l in lines)
+            {
+                if (l.Contains("PATH listing") || l.Contains("├") || l.Contains("└")
+                    || l.Contains("+---") || l.Contains("\\---"))
+                {
+                    treeFormat = true;
+                    break;
+                }
             }
 
-            foreach (FileInfo file in dir.GetFiles())
+            if (treeFormat)
             {
-                writer.WriteLine(indent + "  " + file.Name);
+                string rootName = Path.GetFileNameWithoutExtension(treFile);
+                lines = ConvertTreeFormat(lines, rootName);
+            }
+
+            Materialize(lines);
+            Console.WriteLine("built from " + treFile);
+        }
+
+        //tree /F output -> our simple format
+        static string[] ConvertTreeFormat(string[] lines, string rootName)
+        {
+            List<string> result = new List<string>();
+            result.Add(rootName + "/");
+
+            foreach (string raw in lines)
+            {
+                string line = raw.TrimEnd();
+                if (string.IsNullOrEmpty(line)) continue;
+                if (line.Contains("PATH listing")) continue;
+                if (line.StartsWith("Volume serial number")) continue;
+                if (line.EndsWith(":.")) continue;
+
+                //skip past pipes/brackets/dashes/spaces to find the name
+                int nameStart = 0;
+                while (nameStart < line.Length)
+                {
+                    char c = line[nameStart];
+                    bool isPrefix = c == ' ' || c == '|' || c == '+' || c == '\\' || c == '-'
+                        || c == '│' || c == '├' || c == '└' || c == '─';
+                    if (!isPrefix) break;
+                    nameStart++;
+                }
+
+                if (nameStart >= line.Length) continue;
+
+                int depth = nameStart / 4;
+                if (depth < 1) continue;
+
+                string name = line.Substring(nameStart);
+
+                //folder if there's a tree marker right before the name
+                bool isFolder = false;
+                int markerPos = (depth - 1) * 4;
+                if (markerPos >= 0 && markerPos < line.Length)
+                {
+                    char m = line[markerPos];
+                    if (m == '├' || m == '└' || m == '+' || m == '\\') isFolder = true;
+                }
+
+                string indent = new string(' ', depth * 2);
+                result.Add(indent + name + (isFolder ? "/" : ""));
+            }
+
+            return result.ToArray();
+        }
+
+        //simple format -> create folders/files
+        static void Materialize(string[] lines)
+        {
+            List<string> stack = new List<string>();
+
+            foreach (string raw in lines)
+            {
+                string line = raw.TrimEnd();
+                if (string.IsNullOrEmpty(line)) continue;
+
+                int spaces = 0;
+                while (spaces < line.Length && line[spaces] == ' ') spaces++;
+                int depth = spaces / 2;
+
+                string name = line.Substring(spaces);
+                bool isFolder = name.EndsWith("/");
+                if (isFolder) name = name.Substring(0, name.Length - 1);
+
+                //pop back to parent depth
+                while (stack.Count > depth) stack.RemoveAt(stack.Count - 1);
+
+                stack.Add(name);
+                string path = Path.Combine(stack.ToArray());
+
+                if (isFolder)
+                {
+                    Directory.CreateDirectory(path);
+                }
+                else
+                {
+                    string parent = Path.GetDirectoryName(path);
+                    if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
+                    File.Create(path).Dispose();
+                    stack.RemoveAt(stack.Count - 1);
+                }
             }
         }
     }

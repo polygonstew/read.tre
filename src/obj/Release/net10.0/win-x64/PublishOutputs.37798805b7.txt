@@ -1,0 +1,2 @@
+C:\2026\read.tre\src\bin\Release\net10.0\win-x64\publish\tre.pdb
+C:\2026\read.tre\src\bin\Release\net10.0\win-x64\publish\tre.exe
