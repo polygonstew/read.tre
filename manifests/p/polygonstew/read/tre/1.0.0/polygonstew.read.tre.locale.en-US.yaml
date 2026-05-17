@@ -11,7 +11,7 @@ Author: James Napier
 PackageName: read.tre
 PackageUrl: https://github.com/polygonstew/read.tre/
 License: MIT
-LicenseUrl: https://en.wikipedia.org/wiki/MIT_License
+LicenseUrl: https://opensource.org/license/mit
 Copyright: Copyright (c) 2026 James Napier
 ShortDescription: Bidirectional CLI for the .tre format
 Description: read.tre is a bidirectional CLI for the .tre format. It scans a directory and writes its structure to a .tre file, or reads a .tre file and recreates the folder structure on disk. Also accepts Windows 'tree /F /A' output as input.
