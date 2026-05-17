@@ -212,7 +212,7 @@ also reads windows 'tree /F /A' output");
                 }
                 else
                 {
-                    string parent = Path.GetDirectoryName(path);
+                    string? parent = Path.GetDirectoryName(path);
                     if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
                     if (File.Exists(path))
                     {
