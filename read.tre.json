@@ -1,12 +1,12 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Bidirectional CLI for the .tre format",
   "homepage": "https://github.com/polygonstew/read.tre",
   "license": "MIT",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/polygonstew/read.tre/releases/download/v1.0.0/tre.exe",
-      "hash": "1380A6F43D1CB26B7A70C71B5D146AC3B28D6503F8C2096540F982777BF0E1D4"
+      "url": "https://github.com/polygonstew/read.tre/releases/download/v1.0.1/tre.exe",
+      "hash": "77DE236467A9642DFD43096F5A6AFD430619FFC45768C3636DA1AA31558B467E"
     }
   },
   "bin": "tre.exe",
