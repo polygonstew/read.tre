@@ -1,5 +1,0 @@
-C:\2026\read.tre\src\bin\Release\net10.0\publish\tre.exe
-C:\2026\read.tre\src\bin\Release\net10.0\publish\tre.dll
-C:\2026\read.tre\src\bin\Release\net10.0\publish\tre.deps.json
-C:\2026\read.tre\src\bin\Release\net10.0\publish\tre.runtimeconfig.json
-C:\2026\read.tre\src\bin\Release\net10.0\publish\tre.pdb
