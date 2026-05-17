@@ -28,7 +28,7 @@ winget install polygonstew.read.tre  <--IN REVIEW-->
 ## usage
 
 ```
-tre                    # current dir -> <foldername>.tre
+tre .                  # current dir -> <foldername>.tre
 tre <folder>           # that folder -> <foldername>.tre
 tre <file.tre>         # build folder structure from a .tre
 tre --hidden <folder>  # include hidden folders (.git, .vscode, etc)
