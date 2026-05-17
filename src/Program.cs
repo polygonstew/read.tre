@@ -24,11 +24,13 @@ namespace TreeWriter
                 return;
             }
 
-            //no target -> scan current dir
+            //no target -> prompt
             if (string.IsNullOrEmpty(target))
             {
-                ScanDirectory(Directory.GetCurrentDirectory(), includeHidden);
-                return;
+                Console.Write("path, .tre file, or '.' for current dir: ");
+                target = Console.ReadLine()?.Trim() ?? "";
+                if (string.IsNullOrEmpty(target)) return;
+                if (target == ".") target = Directory.GetCurrentDirectory();
             }
 
             if (File.Exists(target))
@@ -53,7 +55,6 @@ usage:
   tre                    scan current dir -> <name>.tre
   tre <folder>           scan that folder -> <name>.tre
   tre <file.tre>         build folders from a .tre
-  tre <file.txt>         build folders from a .txt (tree /F output)
   tre [path] --hidden    include hidden folders when scanning
 
 flags:
@@ -206,18 +207,21 @@ also reads windows 'tree /F /A' output");
 
                 if (isFolder)
                 {
-                    Console.WriteLine("!!! This will overwrite any files already present !!!");
-                    Console.WriteLine($"!!! are you positive?            (CTRL+C to backout)");
-                    Console.ReadKey();
-                    Console.WriteLine($"!!! press any key to continue... (CTRL+C to backout)");
-                    Console.ReadKey();
+                    if (Directory.Exists(path)) Console.WriteLine("exists:  " + path + "/");
                     Directory.CreateDirectory(path);
                 }
                 else
                 {
-                    string? parent = Path.GetDirectoryName(path);
+                    string parent = Path.GetDirectoryName(path);
                     if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
-                    File.Create(path).Dispose();
+                    if (File.Exists(path))
+                    {
+                        Console.WriteLine("skipped: " + path);
+                    }
+                    else
+                    {
+                        File.Create(path).Dispose();
+                    }
                     stack.RemoveAt(stack.Count - 1);
                 }
             }
