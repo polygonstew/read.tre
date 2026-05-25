@@ -1,7 +1,6 @@
 <div align="center">
 
-```
-┌─ read.tre
+``┌─ read.tre
   └─ folder <-> .tre
 ```
 
