@@ -23,7 +23,7 @@ OR
 # scoop
 scoop install https://raw.githubusercontent.com/polygonstew/read.tre/main/read.tre.json
 # winget
-winget install polygonstew.read.tre  <--IN REVIEW-->
+winget install polygonstew.read.tre
 
 ## usage
 
