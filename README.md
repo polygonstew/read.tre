@@ -57,14 +57,6 @@ demo/
     test_main.py
 ```
 
-## notes
-
-- output lands in the current working directory
-- skips folders starting with `.` unless `--hidden` is passed
-- `bin`/`obj` are NOT skipped — edit Program.cs to add
-- materialize creates empty files (names only, no content)
-- no overwrite protection — if the target folder exists, it gets merged
-
 ## encoding gotcha
 
 If you redirect `tree /F` through PowerShell's `>`, older versions write UTF-16 without a BOM and the parser misreads it. Workaround:
