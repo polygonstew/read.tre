@@ -1,0 +1,26 @@
+# Created using wingetcreate 1.12.8.0
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.12.0.schema.json
+
+PackageIdentifier: polygonstew.read.tre
+PackageVersion: 1.0.3
+PackageLocale: en-US
+Publisher: polygonstew
+PublisherUrl: https://github.com/polygonstew/
+PublisherSupportUrl: https://github.com/polygonstew/read.tre/issues
+Author: James Napier
+PackageName: read.tre
+PackageUrl: https://github.com/polygonstew/read.tre/
+License: MIT
+LicenseUrl: https://opensource.org/license/mit
+Copyright: Copyright (c) 2026 James Napier
+ShortDescription: Bidirectional CLI for the .tre format
+Description: read.tre is a bidirectional CLI for the .tre format. It scans a directory and writes its structure to a .tre file, or reads a .tre file and recreates the folder structure on disk. Also accepts Windows 'tree /F /A' output as input.
+Tags:
+- cli
+- filesystem
+- tree
+- scaffolding
+- directory
+ReleaseNotes: First release.
+ManifestType: defaultLocale
+ManifestVersion: 1.12.0
