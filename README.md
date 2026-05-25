@@ -1,7 +1,9 @@
 <div align="center">
 
-``┌─ read.tre
-  └─ folder <-> .tre
+```
+┌─ read.tre
+└─ folder <-> .tre
+
 ```
 
 ![C#](https://img.shields.io/badge/c%23-.NET-D97706?style=flat-square)
