@@ -1,10 +1,5 @@
 <div align="center">
-
-```
-┌─ read.tre
-└─ folder <-> .tre
-
-```
+<h1>read.tre</h1>
 
 ![C#](https://img.shields.io/badge/c%23-.NET-D97706?style=flat-square)
 ![status](https://img.shields.io/badge/status-works_on_my_machine-1F2937?style=flat-square)
