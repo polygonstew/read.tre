@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Bidirectional CLI for the .tre format",
   "homepage": "https://github.com/polygonstew/read.tre",
   "license": "MIT",

@@ -1,65 +1,61 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
+﻿using System.Text;
+using System.Text.RegularExpressions;
 
-namespace TreeWriter
+namespace read_tre;
+
+class Program
 {
-    class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            string target = "";
-            bool includeHidden = false;
-            bool showHelp = false;
-            foreach (string a in args)
-            {
-                if (a == "--hidden") includeHidden = true;
-                else if (a == "-h" || a == "--help") showHelp = true;
-                else target = a;
-            }
+        bool includeHidden = false;
+        string? target = null;
 
-            if (showHelp)
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i] == "--hidden" || (args[i] == "-h" && i + 1 < args.Length && args[i + 1] == "-hidden"))
             {
-                PrintHelp();
+                includeHidden = true;
+            }
+            else if (args[i] == "--help" || args[i] == "-h")
+            {
+                ShowHelp();
                 return;
             }
-
-            //no target -> prompt
-            if (string.IsNullOrEmpty(target))
+            else if (!args[i].StartsWith('-'))
             {
-                Console.Write("path, .tre file, or '.' for current dir: ");
-                target = Console.ReadLine()?.Trim() ?? "";
-                if (string.IsNullOrEmpty(target)) return;
-                if (target == ".") target = Directory.GetCurrentDirectory();
-            }
-
-            if (File.Exists(target))
-            {
-                BuildFromTree(target);
-            }
-            else if (Directory.Exists(target))
-            {
-                ScanDirectory(target, includeHidden);
-            }
-            else
-            {
-                Console.WriteLine("not found: " + target);
+                target = args[i];
             }
         }
 
-        static void PrintHelp()
+        if (target == null && args.Length == 0)
         {
-            Console.WriteLine(@"read.tre - bidirectional cli for .tre files
+            Console.Write("path, .tre file, or '.' for current dir: ");
+            target = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(target)) return;
+        }
+
+        if (File.Exists(target))
+            MaterializeFromFile(target);
+        else if (Directory.Exists(target))
+            GenerateTreeFile(target, includeHidden);
+        else
+            Console.WriteLine($"Error: '{target}' does not exist as a file or directory.");
+    }
+
+    static void ShowHelp()
+    {
+        Console.WriteLine(@"
+read.tre - bidirectional cli for .tre files
 
 usage:
-  tre                    scan current dir -> <name>.tre
-  tre <folder>           scan that folder -> <name>.tre
-  tre <file.tre>         build folders from a .tre
-  tre [path] --hidden    include hidden folders when scanning
+  tre                     scan current dir -> <name>.tre (prompts)
+  tre <folder>            scan that folder -> <name>.tre
+  tre <file.tre>          build folders from a .tre
+  tre [path] --hidden     include hidden folders when scanning
 
 flags:
-  -h, --help             show this help
-  --hidden               include folders starting with .
+  -h, --help              show this help
+  --hidden                include folders starting with .
 
 format:
   demo/
@@ -67,163 +63,225 @@ format:
     src/
       main.py
 
-also reads windows 'tree /F /A' output");
-        }
+also reads Windows 'tree /F /A' output
+");
+    }
 
-        //forward: dir -> .tre
-        static void ScanDirectory(string rootPath, bool includeHidden)
+    // Strips inline comments after #, //, or ( and trims trailing spaces
+    static string StripComment(string line)
+    {
+        int commentIndex = -1;
+        for (int i = 0; i < line.Length; i++)
         {
-            DirectoryInfo root = new DirectoryInfo(rootPath);
-            string outFile = root.Name + ".tre";
-
-            using (StreamWriter writer = new StreamWriter(outFile))
+            if (line[i] == '#')
             {
-                WriteTree(root, 0, writer, includeHidden);
+                commentIndex = i;
+                break;
+            }
+            if (i + 1 < line.Length && line[i] == '/' && line[i + 1] == '/')
+            {
+                commentIndex = i;
+                break;
+            }
+            if (line[i] == '(')
+            {
+                commentIndex = i;
+                break;
+            }
+        }
+        if (commentIndex >= 0)
+            line = line.Substring(0, commentIndex);
+        return line.TrimEnd();
+    }
+
+    static List<string> ExtractTreeLines(string[] allLines)
+    {
+        var result = new List<string>();
+        bool inTree = false;
+
+        for (int lineNum = 0; lineNum < allLines.Length; lineNum++)
+        {
+            string raw = allLines[lineNum];
+            string line = StripComment(raw);
+
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                if (inTree) break;   // blank line ends tree block
+                continue;
             }
 
-            Console.WriteLine("wrote " + outFile);
+            // Check for box-drawing characters (Windows tree /F or markdown trees)
+            bool hasBoxDrawing = Regex.IsMatch(line, @"[├└│─\+\-\\|]");
+
+            // Normal .tre lines start with spaces (indent) and end with '/' or contain a dot
+            string trimmed = line.TrimStart();
+            int leadingSpaces = line.Length - trimmed.Length;
+            bool hasIndent = leadingSpaces > 0 || (lineNum == 0 && result.Count == 0);
+            bool endsWithSlash = trimmed.EndsWith('/');
+            bool hasFileExt = trimmed.Contains('.') && !trimmed.Contains(' ');
+
+            bool looksLikeTree = hasBoxDrawing || (hasIndent && (endsWithSlash || hasFileExt));
+
+            if (looksLikeTree)
+            {
+                inTree = true;
+                result.Add(line);
+            }
+            else if (inTree)
+            {
+                break;
+            }
+        }
+        return result;
+    }
+
+    static void MaterializeFromFile(string treFilePath)
+    {
+        if (!File.Exists(treFilePath))
+        {
+            Console.WriteLine($"File not found: {treFilePath}");
+            return;
         }
 
-        //recursive
-        static void WriteTree(DirectoryInfo dir, int depth, StreamWriter writer, bool includeHidden)
+        string[] rawLines = File.ReadAllLines(treFilePath, Encoding.UTF8);
+        var treeLines = ExtractTreeLines(rawLines);
+        if (treeLines.Count == 0)
         {
-            string indent = new string(' ', depth * 2);
-            writer.WriteLine(indent + dir.Name + "/");
-
-            try
-            {
-                foreach (DirectoryInfo sub in dir.GetDirectories())
-                {
-                    if (!includeHidden && sub.Name.StartsWith(".")) continue;
-                    WriteTree(sub, depth + 1, writer, includeHidden);
-                }
-
-                foreach (FileInfo file in dir.GetFiles())
-                {
-                    writer.WriteLine(indent + "  " + file.Name);
-                }
-            }
-            catch (UnauthorizedAccessException) { }
+            Console.WriteLine("No valid tree lines found in the file.");
+            return;
         }
 
-        //reverse: .tre -> dir
-        static void BuildFromTree(string treFile)
-        {
-            string[] lines = File.ReadAllLines(treFile);
+        string rootName = Path.GetFileNameWithoutExtension(treFilePath);
+        string basePath = Path.Combine(Directory.GetCurrentDirectory(), rootName);
 
-            //detect tree /F format
-            bool treeFormat = false;
-            foreach (string l in lines)
+        Console.WriteLine($"Materializing to: {basePath}");
+        ParseAndMaterialize(treeLines.ToArray(), basePath);
+    }
+
+    static void ParseAndMaterialize(string[] lines, string basePath)
+    {
+        var stack = new Stack<(string Path, int Depth)>();
+        stack.Push((basePath, -1));
+
+        foreach (string rawLine in lines)
+        {
+            string line = rawLine.TrimEnd();
+            if (string.IsNullOrEmpty(line)) continue;
+
+            // Count depth differently for box-drawing vs space-indented
+            int depth = 0;
+            string entry = line;
+            bool isFolder = entry.EndsWith('/');
+            string name = isFolder ? entry.TrimEnd('/') : entry;
+
+            // Try to detect box-drawing style (tree /F)
+            bool hasBoxDrawing = Regex.IsMatch(line, @"[├└│─\+\-\\|]");
+            if (hasBoxDrawing)
             {
-                if (l.Contains("PATH listing") || l.Contains("├") || l.Contains("└")
-                    || l.Contains("+---") || l.Contains("\\---"))
-                {
-                    treeFormat = true;
-                    break;
-                }
+                // Remove box-drawing prefixes to get the actual name
+                name = Regex.Replace(line, @"^[├└│─\+\-\\| ]+", "");
+                if (string.IsNullOrWhiteSpace(name))
+                    continue;
+                isFolder = name.EndsWith('/');
+                if (isFolder) name = name.TrimEnd('/');
+                // Estimate depth by counting how many "├", "└", "│", "+", "\", "|" appear before the name
+                string prefix = line.Substring(0, line.IndexOf(name));
+                depth = prefix.Count(c => c == '├' || c == '└' || c == '│' || c == '+' || c == '\\' || c == '|');
+                // In tree /F, depth is number of vertical bars + 1? But we'll trust the stack logic.
+                // For simplicity, we'll keep depth as counted, and stack will handle parents.
+            }
+            else
+            {
+                // Space-indented format: 2 spaces per level
+                int leadingSpaces = line.TakeWhile(char.IsWhiteSpace).Count();
+                depth = leadingSpaces / 2;
+                entry = line.Trim();
+                isFolder = entry.EndsWith('/');
+                name = isFolder ? entry.TrimEnd('/') : entry;
             }
 
-            if (treeFormat)
+            // Adjust stack to the correct parent
+            while (stack.Count > 1 && stack.Peek().Depth >= depth)
+                stack.Pop();
+
+            string parentPath = stack.Peek().Path;
+            string fullPath = Path.Combine(parentPath, name);
+
+            if (isFolder)
             {
-                string rootName = Path.GetFileNameWithoutExtension(treFile);
-                lines = ConvertTreeFormat(lines, rootName);
-            }
-
-            Materialize(lines);
-            Console.WriteLine("built from " + treFile);
-        }
-
-        //tree /F output -> our simple format
-        static string[] ConvertTreeFormat(string[] lines, string rootName)
-        {
-            List<string> result = new List<string>();
-            result.Add(rootName + "/");
-
-            foreach (string raw in lines)
-            {
-                string line = raw.TrimEnd();
-                if (string.IsNullOrEmpty(line)) continue;
-                if (line.Contains("PATH listing")) continue;
-                if (line.StartsWith("Volume serial number")) continue;
-                if (line.EndsWith(":.")) continue;
-
-                //skip past pipes/brackets/dashes/spaces to find the name
-                int nameStart = 0;
-                while (nameStart < line.Length)
-                {
-                    char c = line[nameStart];
-                    bool isPrefix = c == ' ' || c == '|' || c == '+' || c == '\\' || c == '-'
-                        || c == '│' || c == '├' || c == '└' || c == '─';
-                    if (!isPrefix) break;
-                    nameStart++;
-                }
-
-                if (nameStart >= line.Length) continue;
-
-                int depth = nameStart / 4;
-                if (depth < 1) continue;
-
-                string name = line.Substring(nameStart);
-
-                //folder if there's a tree marker right before the name
-                bool isFolder = false;
-                int markerPos = (depth - 1) * 4;
-                if (markerPos >= 0 && markerPos < line.Length)
-                {
-                    char m = line[markerPos];
-                    if (m == '├' || m == '└' || m == '+' || m == '\\') isFolder = true;
-                }
-
-                string indent = new string(' ', depth * 2);
-                result.Add(indent + name + (isFolder ? "/" : ""));
-            }
-
-            return result.ToArray();
-        }
-
-        //simple format -> create folders/files
-        static void Materialize(string[] lines)
-        {
-            List<string> stack = new List<string>();
-
-            foreach (string raw in lines)
-            {
-                string line = raw.TrimEnd();
-                if (string.IsNullOrEmpty(line)) continue;
-
-                int spaces = 0;
-                while (spaces < line.Length && line[spaces] == ' ') spaces++;
-                int depth = spaces / 2;
-
-                string name = line.Substring(spaces);
-                bool isFolder = name.EndsWith("/");
-                if (isFolder) name = name.Substring(0, name.Length - 1);
-
-                //pop back to parent depth
-                while (stack.Count > depth) stack.RemoveAt(stack.Count - 1);
-
-                stack.Add(name);
-                string path = Path.Combine(stack.ToArray());
-
-                if (isFolder)
-                {
-                    if (Directory.Exists(path)) Console.WriteLine("exists:  " + path + "/");
-                    Directory.CreateDirectory(path);
-                }
+                if (Directory.Exists(fullPath))
+                    Console.WriteLine($"  folder exists: {fullPath} (merging)");
                 else
                 {
-                    string? parent = Path.GetDirectoryName(path);
-                    if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
-                    if (File.Exists(path))
-                    {
-                        Console.WriteLine("skipped: " + path);
-                    }
-                    else
-                    {
-                        File.Create(path).Dispose();
-                    }
-                    stack.RemoveAt(stack.Count - 1);
+                    Directory.CreateDirectory(fullPath);
+                    Console.WriteLine($"  created folder: {fullPath}");
                 }
+                stack.Push((fullPath, depth));
+            }
+            else
+            {
+                if (File.Exists(fullPath))
+                    Console.WriteLine($"  file exists, skipping: {fullPath}");
+                else
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+                    File.WriteAllText(fullPath, $"// auto-generated by read.tre\n// {name}\n");
+                    Console.WriteLine($"  created file: {fullPath}");
+                }
+            }
+        }
+    }
+
+    static void GenerateTreeFile(string directoryPath, bool includeHidden)
+    {
+        if (!Directory.Exists(directoryPath))
+        {
+            Console.WriteLine($"Directory not found: {directoryPath}");
+            return;
+        }
+
+        var lines = new List<string>();
+        WalkDirectory(directoryPath, "", lines, includeHidden);
+
+        string outputFileName = Path.GetFileName(directoryPath) + ".tre";
+        string outputPath = Path.Combine(Directory.GetCurrentDirectory(), outputFileName);
+        File.WriteAllLines(outputPath, lines);
+        Console.WriteLine($"wrote {outputPath}");
+    }
+
+    static void WalkDirectory(string dir, string indent, List<string> lines, bool includeHidden)
+    {
+        var entries = new List<(string Name, bool IsDir)>();
+
+        foreach (string path in Directory.GetDirectories(dir))
+        {
+            string name = Path.GetFileName(path);
+            if (!includeHidden && name.StartsWith('.')) continue;
+            entries.Add((name, true));
+        }
+        foreach (string path in Directory.GetFiles(dir))
+        {
+            string name = Path.GetFileName(path);
+            if (!includeHidden && name.StartsWith('.')) continue;
+            entries.Add((name, false));
+        }
+
+        entries = entries.OrderBy(e => !e.IsDir).ThenBy(e => e.Name).ToList();
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            var (name, isDir) = entries[i];
+            bool isLast = i == entries.Count - 1;
+
+            string prefix = indent + (isLast ? "  " : "  ");
+            string entryLine = prefix + name;
+            if (isDir) entryLine += "/";
+            lines.Add(entryLine);
+
+            if (isDir)
+            {
+                string newIndent = indent + (isLast ? "  " : "  ");
+                WalkDirectory(Path.Combine(dir, name), newIndent, lines, includeHidden);
             }
         }
     }
